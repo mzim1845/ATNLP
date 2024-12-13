@@ -1,0 +1,9 @@
+# Experiment 1 Hyperparameters: 
+EMB_DIM = 128 
+N_LAYERS = 1 
+N_HEADS = 8 
+FORWARD_DIM = 512 
+DROPOUT = 0.05 
+LEARNING_RATE = 7e-4 
+GRAD_CLIP = 1
+BATCH_SIZE = 64
