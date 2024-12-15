@@ -287,6 +287,8 @@ class Transformer(nn.Module):
     def oracle_len_predict(self, src, start_token, end_token, oracle_len, max_len=128):
         batch_size = src.size(0)
         
+        special_tokens = [start_token, end_token, self.tgt_pad_idx]
+        
         src_mask = self.create_src_mask(src)
         encoder_out = self.encoder(src, src_mask)
         
@@ -299,13 +301,24 @@ class Transformer(nn.Module):
 
             next_token_logits = decoder_out[:, -1, :]
 
-            _, topk_indices = torch.topk(next_token_logits, k=2, dim=-1)
-            next_token = topk_indices[:, 0]
-
-            # enforce oracle length
+            sorted_indices = torch.argsort(next_token_logits, dim=-1, descending=True)
+            next_token = sorted_indices[:, 0]
+            
             for b in range(batch_size):
-                if i < oracle_len[b] and next_token[b] == end_token:
-                    next_token[b] = topk_indices[b, 1]
+                if i == oracle_len[b] - 1:
+                    next_token[b] = end_token
+                elif i < oracle_len[b]:
+                    valid_token_found = False
+                    for candidate in sorted_indices[b]:
+                        if candidate not in special_tokens:
+                            next_token[b] = candidate
+                            valid_token_found = True
+                            break
+                    if not valid_token_found:
+                        next_token[b] = end_token
+                        assert False
+                else:
+                    next_token[b] = self.tgt_pad_idx
             
             tgt[:, i] = next_token
             
