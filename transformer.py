@@ -283,3 +283,33 @@ class Transformer(nn.Module):
                 break
 
         return tgt
+    
+    def oracle_len_predict(self, src, start_token, end_token, oracle_len, max_len=128):
+        batch_size = src.size(0)
+        
+        src_mask = self.create_src_mask(src)
+        encoder_out = self.encoder(src, src_mask)
+        
+        tgt = torch.full((batch_size, max_len), self.tgt_pad_idx, dtype=torch.long, device=src.device)
+        tgt[:, 0] = start_token
+
+        for i in range(1, max_len):
+            tgt_mask = self.create_tgt_mask(tgt[:, :i])
+            decoder_out = self.decoder(tgt[:, :i], encoder_out, src_mask, tgt_mask)
+
+            next_token_logits = decoder_out[:, -1, :]
+
+            _, topk_indices = torch.topk(next_token_logits, k=2, dim=-1)
+            next_token = topk_indices[:, 0]
+
+            # enforce oracle length
+            for b in range(batch_size):
+                if i < oracle_len[b] and next_token[b] == end_token:
+                    next_token[b] = topk_indices[b, 1]
+            
+            tgt[:, i] = next_token
+            
+            if (next_token == end_token).all():
+                break
+
+        return tgt
