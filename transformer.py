@@ -270,16 +270,20 @@ class Transformer(nn.Module):
         tgt = torch.full((batch_size, max_len), self.tgt_pad_idx, dtype=torch.long, device=src.device)
         tgt[:, 0] = start_token
 
+        active_sequences = torch.ones(batch_size, dtype=torch.bool, device=src.device)
+
         for i in range(1, max_len):
             tgt_mask = self.create_tgt_mask(tgt[:, :i])
             decoder_out = self.decoder(tgt[:, :i], encoder_out, src_mask, tgt_mask)
 
             next_token_logits = decoder_out[:, -1, :]
             next_token = torch.argmax(next_token_logits, dim=-1)
+
+            tgt[active_sequences, i] = next_token[active_sequences]
+        
+            active_sequences = active_sequences & (next_token != end_token)
             
-            tgt[:, i] = next_token
-            
-            if (next_token == end_token).all():
+            if not active_sequences.any():
                 break
 
         return tgt
