@@ -261,6 +261,31 @@ class Transformer(nn.Module):
 
         return self.decoder(tgt, encoder_out, src_mask, tgt_mask)
 
+    def predict_logits(self, src, tgt, start_token):
+        src_mask = self.create_src_mask(src)
+        encoder_out = self.encoder(src, src_mask)
+
+        batch_size, max_len = tgt.shape
+
+        tgt = torch.full((batch_size, max_len), self.tgt_pad_idx, dtype=torch.long, device=src.device)
+        tgt[:, 0] = start_token
+        outputs = []
+
+        for i in range(1, max_len):
+            tgt_mask = self.create_tgt_mask(tgt[:, :i])
+            decoder_out = self.decoder(tgt[:, :i], encoder_out, src_mask, tgt_mask)
+
+            next_token_logits = decoder_out[:, -1, :]
+            outputs.append(next_token_logits.unsqueeze(1))  # Append to outputs list
+
+            next_token = torch.argmax(next_token_logits, dim=-1)
+            tgt = tgt.clone()
+            tgt[:, i] = next_token
+
+        outputs = torch.cat(outputs, dim=1)
+
+        return outputs.float()
+
     def predict(self, src, start_token, end_token, max_len=128):
         batch_size = src.size(0)
         
