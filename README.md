@@ -13,5 +13,7 @@ Environment: Jupyter Notebook (python 3.11v)
 Relevant libraries used in this project:\
 torch==2.2.1\
 tqdm==4.65.0\
+matplotlib==3.7.1\
+numpy==1.24.3\
 And some other libraries that come built-in.
 
