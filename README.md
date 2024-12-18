@@ -17,3 +17,18 @@ matplotlib==3.7.1\
 numpy==1.24.3\
 And some other libraries that come built-in.
 
+## How to run
+
+Follow the steps below:
+
+1. Unzip 'src.zip' 
+2. Open terminal 
+3. Navigate to the folder 'src' 
+4. Execute the command 'jupyter notebook' 
+5. Open desired notebook 
+6. Choose 'Run All' 
+
+
+## Other
+
+"experiment2_balance.ipynb" has been appended for completeness
